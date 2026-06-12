@@ -10,9 +10,12 @@ build-cloudberry() {
   rm -rf "$src"
   git clone --depth 1 --branch "$ref" https://github.com/apache/cloudberry.git "$src"
   cd "$src"
+  # Static-link the C++ runtime: otherwise the binary needs the custom GCC's
+  # libstdc++.so.6 / libgcc_s.so.1 at runtime — not present on a clean target.
   ./configure --prefix="$prefix" \
     --enable-orca --with-perl --with-python --with-openssl --with-libxml \
-    --with-libxslt --with-gssapi --with-ldap --with-pam --with-uuid=e2fs
+    --with-libxslt --with-gssapi --with-ldap --with-pam --with-uuid=e2fs \
+    LDFLAGS="-static-libstdc++ -static-libgcc"
   make -j"$(nproc)"
   make install
   echo "built Cloudberry core $ref → $prefix"
