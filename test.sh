@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Portability gate (HARD): no unresolved non-glibc shared-lib deps, AND the binary
 # loads + runs on this distro. Functional smoke (initdb + SELECT) is best-effort —
-# it exercises the DB but won't fail the gate on a distro/kernel quirk.
+# it exercises the DB but won't fail the gate on the intermittent cdb_init.d ENOSYS
+# some sandboxed CI runners hit (see the non-fatal message in run-tests).
 set -uo pipefail
 
 prefix="/usr/local/synxdb-ce"
@@ -41,7 +42,7 @@ run-tests() {
   [ -x "$prefix/bin/postgres" ] || { echo "❌ install incomplete — $prefix/bin/postgres missing"; return 1; }
   portability-gate || return 1
   version-check    || return 1
-  smoke || echo "⚠ functional smoke did not complete on this distro (non-fatal — the binary still loaded + ran above; known glibc-2.39/kernel nuance on some hosts)"
+  smoke || echo "⚠ functional smoke (initdb) did not complete here — NON-FATAL. The binary loaded + ran above; initdb+SELECT succeed in normal runs, but Cloudberry's cdb_init.d directory read intermittently returns ENOSYS in some sandboxed/CI runners (timing-sensitive — does not reproduce locally; under investigation)."
   return 0
 }
 

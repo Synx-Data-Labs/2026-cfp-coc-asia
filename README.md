@@ -15,9 +15,11 @@ This is a **build of**, not a fork of, Apache Cloudberry.
 > **🚧 Status (June 2026): early but working.** From-source GCC toolchain, Apache Cloudberry
 > **core** compile, static-linked C++ runtime, and **dependency vendoring** are all in place:
 > every non-glibc library (OpenSSL, Xerces, LDAP, krb5, …) is bundled into `lib/` with an
-> `$ORIGIN` rpath, so **glibc is the only runtime dependency**. The binary loads + runs across
-> Rocky 8/9 and Ubuntu 22.04/24.04; the `initdb` smoke is green on Rocky 8/9 + Ubuntu 22.04.
-> CI runs the full multi-distro matrix.
+> `$ORIGIN` rpath, so **glibc is the only runtime dependency**. CI builds once and verifies the
+> binary **loads + runs** (`postgres --version`) across Rocky 8/9, Ubuntu 22.04/24.04, and Debian 12.
+> `initdb` + `SELECT version()` succeed in normal runs; the CI **functional smoke is best-effort** —
+> an intermittent `cdb_init.d` `ENOSYS` in some sandboxed runners (does not reproduce locally) is
+> still under investigation, so it never fails the build.
 
 ## Reproduce on Apple Silicon
 
