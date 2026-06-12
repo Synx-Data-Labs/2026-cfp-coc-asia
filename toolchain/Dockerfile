@@ -2,7 +2,7 @@
 FROM --platform=linux/arm64 rockylinux:8
 
 ARG GCC_VERSION=12.3.0
-RUN dnf -y install gcc gcc-c++ make bzip2 wget flex perl diffutils \
+RUN dnf -y install gcc gcc-c++ make bzip2 xz tar wget flex perl diffutils \
       && dnf clean all
 RUN cd /tmp && wget -q "https://ftp.gnu.org/gnu/gcc/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.xz" \
       && tar xf "gcc-${GCC_VERSION}.tar.xz" && cd "gcc-${GCC_VERSION}" \
