@@ -16,7 +16,9 @@ build-cloudberry() {
     --enable-orca --with-perl --with-python --with-openssl --with-libxml \
     --with-libxslt --with-gssapi --with-ldap --with-pam --with-uuid=e2fs \
     LDFLAGS="-static-libstdc++ -static-libgcc"
-  make -j"$(nproc)"
+  # MAKE_JOBS caps parallelism — ORCA's -O3 C++ TUs are RAM-heavy, and CI
+  # (hosted runner, ~16 GB shared) OOMs at -j$(nproc); local builds keep full width.
+  make -j"${MAKE_JOBS:-$(nproc)}"
   make install
   echo "built Cloudberry core $ref → $prefix"
 }
