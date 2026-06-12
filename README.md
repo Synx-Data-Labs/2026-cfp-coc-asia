@@ -12,6 +12,12 @@ fork of, Apache Cloudberry.
 > Apache Cloudberry is an effort undergoing incubation at The Apache Software Foundation
 > (ASF), sponsored by the Apache Incubator.
 
+> **🚧 Status (June 2026): work in progress.** The from-source GCC toolchain, the Apache
+> Cloudberry **core** compile, and static-linking of the C++ runtime work today. Full
+> *run-on-any-arm64-distro* portability is still landing: the binary currently links a few
+> libraries whose sonames differ across distros (OpenSSL 1.1 ↔ 3.x, Xerces, LDAP); these are
+> being vendored so that **glibc** becomes the only runtime dependency.
+
 ## Reproduce on Apple Silicon
 
 ```bash
