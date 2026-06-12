@@ -1,0 +1,46 @@
+name: build
+on:
+  push: { branches: [main], tags: ['v*'] }
+  pull_request:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm   # GitHub-hosted arm64 (free for public repos)
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build toolchain image
+        run: docker build --platform=linux/arm64 -t coc-toolchain:gcc12 toolchain/
+      - name: Build env image
+        run: docker build --platform=linux/arm64 -t coc-build:rocky8 .
+      - name: Build + package
+        run: |
+          docker run --rm --platform=linux/arm64 -v "$PWD":/work coc-build:rocky8 \
+            bash -lc 'bash /opt/build.sh && PKG_VERSION=${PKG_VERSION:-2.1.0} bash /work/package.sh'
+      - uses: actions/upload-artifact@v4
+        with: { name: packages, path: dist/* }
+  smoke:
+    needs: build
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      matrix:
+        image: ['rockylinux:8', 'rockylinux:9', 'ubuntu:22.04', 'ubuntu:24.04', 'debian:12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: packages, path: dist }
+      - name: Install + smoke on ${{ matrix.image }}
+        run: |
+          docker run --rm --platform=linux/arm64 -v "$PWD":/work ${{ matrix.image }} bash -lc '
+            (command -v apt-get && apt-get update -qq && apt-get install -y /work/dist/synxdb-ce_*_arm64.deb) ||
+            (command -v dnf && dnf -y install /work/dist/synxdb-ce-*.aarch64.rpm);
+            bash /work/test.sh'
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: smoke
+    runs-on: ubuntu-24.04-arm
+    permissions: { contents: write }
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: packages, path: dist }
+      - uses: softprops/action-gh-release@v2
+        with: { files: dist/* }
