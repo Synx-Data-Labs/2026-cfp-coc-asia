@@ -8,6 +8,7 @@ vendor-synxdb-ce() {
   local prefix="${1:-/usr/local/synxdb-ce}"
   local libdir="$prefix/lib"
   mkdir -p "$libdir"
+  unset LD_LIBRARY_PATH   # resolve deps against the base system, not the build toolchain (deterministic)
 
   # Libraries every glibc >= 2.28 target already ships — never bundle these
   # (bundling libc et al. would break the binary). Everything else is vendored.

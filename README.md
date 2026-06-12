@@ -5,18 +5,19 @@ Linux: A Truly Portable Binary Distribution for Apache Cloudberry (Incubating)"*
 
 It builds the **core** of [Apache Cloudberry (Incubating)](https://cloudberry.apache.org/)
 from the public upstream source into a portable **arm64** Linux binary (RPM + DEB) —
-built on a Rocky 8 / glibc-2.28 floor with a from-source GCC toolchain, so one build
-runs on every current arm64 Linux distro (glibc ≥ 2.28). This is a **build of**, not a
-fork of, Apache Cloudberry.
+built on a Rocky 8 / glibc-2.28 floor with a from-source GCC toolchain, every non-glibc
+library vendored in, so one build runs on every current arm64 Linux distro (glibc ≥ 2.28).
+This is a **build of**, not a fork of, Apache Cloudberry.
 
 > Apache Cloudberry is an effort undergoing incubation at The Apache Software Foundation
 > (ASF), sponsored by the Apache Incubator.
 
-> **🚧 Status (June 2026): work in progress.** The from-source GCC toolchain, the Apache
-> Cloudberry **core** compile, and static-linking of the C++ runtime work today. Full
-> *run-on-any-arm64-distro* portability is still landing: the binary currently links a few
-> libraries whose sonames differ across distros (OpenSSL 1.1 ↔ 3.x, Xerces, LDAP); these are
-> being vendored so that **glibc** becomes the only runtime dependency.
+> **🚧 Status (June 2026): early but working.** From-source GCC toolchain, Apache Cloudberry
+> **core** compile, static-linked C++ runtime, and **dependency vendoring** are all in place:
+> every non-glibc library (OpenSSL, Xerces, LDAP, krb5, …) is bundled into `lib/` with an
+> `$ORIGIN` rpath, so **glibc is the only runtime dependency**. The binary loads + runs across
+> Rocky 8/9 and Ubuntu 22.04/24.04; the `initdb` smoke is green on Rocky 8/9 + Ubuntu 22.04.
+> CI runs the full multi-distro matrix.
 
 ## Reproduce on Apple Silicon
 
@@ -24,9 +25,9 @@ fork of, Apache Cloudberry.
 docker build --platform=linux/arm64 -t coc-toolchain:gcc12 toolchain/   # GCC from source (slow, once)
 docker build --platform=linux/arm64 -t coc-build:rocky8 .
 docker run --rm --platform=linux/arm64 -v "$PWD":/work coc-build:rocky8 \
-  bash -lc 'bash /opt/build.sh && bash /work/package.sh'                  # → dist/*.rpm, *.deb
+  bash -lc 'bash /opt/build.sh && bash /opt/vendor.sh && bash /work/package.sh'  # build → vendor → dist/*.rpm,*.deb
 docker run --rm --platform=linux/arm64 -v "$PWD":/work ubuntu:24.04 \
-  bash -lc 'dpkg -i /work/dist/synxdb-ce_*_arm64.deb; bash /work/test.sh' # portability + smoke
+  bash -lc 'dpkg -i /work/dist/synxdb-ce_*_arm64.deb; bash /work/test.sh'        # portability gate + smoke
 ```
 
 ## What's here
@@ -34,8 +35,8 @@ docker run --rm --platform=linux/arm64 -v "$PWD":/work ubuntu:24.04 \
 |---|---|
 | `toolchain/` | GCC 12 from-source build image |
 | `Dockerfile` | build environment (Cloudberry core deps) |
-| `build.sh` · `package.sh` · `test.sh` | build · package (fpm) · portability gate + smoke |
-| `.github/workflows/build.yml` | arm64 CI: build → multi-distro smoke → Releases |
+| `build.sh` · `vendor.sh` · `package.sh` · `test.sh` | build · vendor non-glibc deps (`$ORIGIN` rpath) · package (fpm) · portability gate + smoke |
+| `.github/workflows/build.yml` | arm64 CI: build → vendor → multi-distro smoke → Releases |
 | `slides/` | the talk |
 
 ## License

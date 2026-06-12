@@ -15,7 +15,7 @@ jobs:
       - name: Build + package
         run: |
           docker run --rm --platform=linux/arm64 -v "$PWD":/work coc-build:rocky8 \
-            bash -lc 'bash /opt/build.sh && PKG_VERSION=${PKG_VERSION:-2.1.0} bash /work/package.sh'
+            bash -lc 'bash /opt/build.sh && bash /opt/vendor.sh && PKG_VERSION=${PKG_VERSION:-2.1.0} bash /work/package.sh'
       - uses: actions/upload-artifact@v4
         with: { name: packages, path: dist/* }
   smoke:
