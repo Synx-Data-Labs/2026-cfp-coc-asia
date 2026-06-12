@@ -36,6 +36,9 @@ smoke() {
 }
 
 run-tests() {
+  # Fail loud if the package didn't actually install — otherwise the ldd gate
+  # iterates over an empty prefix and "passes" vacuously, masking a broken install.
+  [ -x "$prefix/bin/postgres" ] || { echo "❌ install incomplete — $prefix/bin/postgres missing"; return 1; }
   portability-gate || return 1
   version-check    || return 1
   smoke || echo "⚠ functional smoke did not complete on this distro (non-fatal — the binary still loaded + ran above; known glibc-2.39/kernel nuance on some hosts)"
