@@ -34,14 +34,17 @@ vendor-synxdb-ce() {
     [ "$changed" = 0 ] && { echo "closure stable after pass $pass"; break; }
   done
 
-  # rpath every ELF (bin/, lib/, lib/postgresql/, ...) so it finds the bundle
-  # from any depth, relative to its own location ($ORIGIN). No absolute paths.
-  local rp='$ORIGIN:$ORIGIN/..:$ORIGIN/../lib:$ORIGIN/../../lib'
-  local n=0
+  # rpath each ELF to point exactly at <prefix>/lib from its own location, computed
+  # PER-FILE so deeply-nested binaries (e.g. lib/postgresql/pgxs/src/test/*, ~6 levels
+  # down) still reach the bundle. $ORIGIN-relative only — no absolute paths.
+  local n=0 f rel d depth up i
   while IFS= read -r f; do
-    if patchelf --print-rpath "$f" >/dev/null 2>&1; then   # true only for ELF
-      patchelf --set-rpath "$rp" "$f" 2>/dev/null && n=$((n+1))
-    fi
+    patchelf --print-rpath "$f" >/dev/null 2>&1 || continue   # ELF only
+    rel="${f#"$prefix"/}"
+    d="$(dirname "$rel")"
+    depth="$(printf '%s\n' "$d" | tr '/' '\n' | grep -c .)"
+    up=""; for ((i=0; i<depth; i++)); do up="$up/.."; done
+    patchelf --set-rpath "\$ORIGIN${up}/lib" "$f" 2>/dev/null && n=$((n+1))
   done < <(find "$prefix/bin" "$libdir" -type f 2>/dev/null)
 
   echo "vendored $(find "$libdir" -maxdepth 1 -name '*.so*' | wc -l | tr -d ' ') libs; rpath set on $n ELF files"
