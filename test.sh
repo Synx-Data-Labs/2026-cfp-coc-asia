@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Portability gate (HARD): no unresolved non-glibc shared-lib deps, AND the binary
-# loads + runs on this distro. Functional smoke (initdb + SELECT) is best-effort —
-# it exercises the DB but won't fail the gate on the intermittent cdb_init.d ENOSYS
-# some sandboxed CI runners hit (see the non-fatal message in run-tests).
+# loads + runs on this distro (postgres --version). These prove the build-once-run-
+# anywhere claim. A standalone Cloudberry postmaster can't start without MPP/dbid
+# context, so the per-distro functional check stops at initdb (best-effort, non-fatal);
+# the real server-up + query proof is the cluster demo (cluster.sh / `make cluster`).
 set -uo pipefail
 
 prefix="/usr/local/synxdb-ce"
@@ -25,15 +26,16 @@ version-check() {
 }
 
 smoke() {
-  echo "== functional smoke: initdb + SELECT version() (best-effort) =="
+  echo "== functional smoke: initdb (best-effort) =="
+  command -v useradd >/dev/null && command -v su >/dev/null || {
+    echo "↷ skipped — no useradd/su on this minimal image (the gate + version above are the hard checks)"; return 0; }
   useradd -m gpadmin 2>/dev/null || true
-  su - gpadmin -c "
-    export PATH=$prefix/bin:\$PATH; unset LD_LIBRARY_PATH
-    initdb -D /tmp/demo >/tmp/initdb.log 2>&1 || { echo 'initdb did not complete'; tail -3 /tmp/initdb.log; exit 1; }
-    pg_ctl -D /tmp/demo -l /tmp/demo/logfile -o '-p 5433' -w start >/dev/null 2>&1 || exit 1
-    psql -p 5433 -d postgres -tc 'SELECT version();'
-    pg_ctl -D /tmp/demo stop -m fast >/dev/null 2>&1 || true
-  "
+  if su - gpadmin -c "export PATH=$prefix/bin:\$PATH; unset LD_LIBRARY_PATH; initdb -D /tmp/demo" >/tmp/initdb.log 2>&1; then
+    echo "✅ initdb initialized a data directory"
+  else
+    tail -3 /tmp/initdb.log 2>/dev/null || true
+    return 1
+  fi
 }
 
 run-tests() {
@@ -42,7 +44,7 @@ run-tests() {
   [ -x "$prefix/bin/postgres" ] || { echo "❌ install incomplete — $prefix/bin/postgres missing"; return 1; }
   portability-gate || return 1
   version-check    || return 1
-  smoke || echo "⚠ functional smoke (initdb) did not complete here — NON-FATAL. The binary loaded + ran above; initdb+SELECT succeed in normal runs, but Cloudberry's cdb_init.d directory read intermittently returns ENOSYS in some sandboxed/CI runners (timing-sensitive — does not reproduce locally; under investigation)."
+  smoke || echo "⚠ initdb smoke did not complete here — NON-FATAL (some sandboxed kernels trip Cloudberry's catalog init). The portability gate + version check above are the hard per-distro proof; a full server-up + query is the cluster demo (\`make cluster\`)."
   return 0
 }
 
