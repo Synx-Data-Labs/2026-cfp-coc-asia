@@ -1,7 +1,10 @@
 name: build
 on:
   push: { branches: [main], tags: ['v*'] }
+  # Docs-only PRs skip the full arm64 build/smoke/cluster matrix. Scoped to
+  # pull_request only (NOT push) so a release tag build is never path-filtered.
   pull_request:
+    paths-ignore: ['**.md', 'LICENSE', 'NOTICE', '.gitignore']
   workflow_dispatch:
 jobs:
   build:
