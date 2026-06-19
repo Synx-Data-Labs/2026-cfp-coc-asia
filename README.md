@@ -1,6 +1,6 @@
 # 2026-cfp-coc-asia — Build Once, Run on Any Linux
 
-Companion repo for the Community Over Code Asia 2026 talk *"Build Once, Run on Any
+Companion repo for the [Community Over Code Asia 2026 talk](https://sessionize.com/s/shine-zhang/build-once-run-on-any-linux-synxdb-ce-for-apache-c/177992) *"Build Once, Run on Any
 Linux: A Truly Portable Binary Distribution for Apache Cloudberry (Incubating)"*.
 
 It builds the **core** of [Apache Cloudberry (Incubating)](https://cloudberry.apache.org/)
