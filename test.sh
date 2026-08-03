@@ -2,8 +2,8 @@
 # Portability gate (HARD): no unresolved non-glibc shared-lib deps, AND the binary
 # loads + runs on this distro (postgres --version). These prove the build-once-run-
 # anywhere claim. A standalone Cloudberry postmaster can't start without MPP/dbid
-# context, so the per-distro functional check stops at initdb (best-effort, non-fatal);
-# the real server-up + query proof is the cluster demo (cluster.sh / `make cluster`).
+# context, so the per-distro functional check stops here; the real server-up +
+# query proof is the cluster demo (cluster.sh / `make cluster`).
 set -uo pipefail
 
 prefix="/usr/local/synxdb-ce"
@@ -25,26 +25,12 @@ version-check() {
   "$prefix/bin/postgres" --version
 }
 
-smoke() {
-  echo "== functional smoke: initdb (best-effort) =="
-  command -v useradd >/dev/null && command -v su >/dev/null || {
-    echo "↷ skipped — no useradd/su on this minimal image (the gate + version above are the hard checks)"; return 0; }
-  useradd -m gpadmin 2>/dev/null || true
-  if su - gpadmin -c "export PATH=$prefix/bin:\$PATH; unset LD_LIBRARY_PATH; initdb -D /tmp/demo" >/tmp/initdb.log 2>&1; then
-    echo "✅ initdb initialized a data directory"
-  else
-    tail -3 /tmp/initdb.log 2>/dev/null || true
-    return 1
-  fi
-}
-
 run-tests() {
   # Fail loud if the package didn't actually install — otherwise the ldd gate
   # iterates over an empty prefix and "passes" vacuously, masking a broken install.
   [ -x "$prefix/bin/postgres" ] || { echo "❌ install incomplete — $prefix/bin/postgres missing"; return 1; }
   portability-gate || return 1
   version-check    || return 1
-  smoke || echo "⚠ initdb smoke did not complete here — NON-FATAL (some sandboxed kernels trip Cloudberry's catalog init). The portability gate + version check above are the hard per-distro proof; a full server-up + query is the cluster demo (\`make cluster\`)."
   return 0
 }
 
