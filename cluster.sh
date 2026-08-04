@@ -14,7 +14,13 @@ PREFIX="${PREFIX:-/usr/local/synxdb-ce}"
 GPUSER="${GPUSER:-gpadmin}"
 DATADIR="${DATADIR:-/home/$GPUSER/gpdemo-data}"
 PRIMARIES="${PRIMARIES:-2}"                 # => PRIMARIES primaries + PRIMARIES mirrors
-NOISE='no version information available'    # cosmetic: vendored libselinux shadows the OS copy (follow-up: rpath it)
+NOISE='no version information available'    # cosmetic: sourcing cloudberry-env.sh (upstream-generated,
+                                             # sets LD_LIBRARY_PATH) shadows the OS libselinux for any
+                                             # coreutils invoked in the same session -- LD_LIBRARY_PATH
+                                             # is searched before a binary's own rpath, so vendor.sh's
+                                             # rpath step (which already covers this package's own ELFs)
+                                             # can't prevent it; filtered at every call site below that
+                                             # sources cloudberry-env.sh
 
 _detect_pkg_mgr() {
   command -v dnf    >/dev/null 2>&1 && { echo dnf;    return; }
@@ -52,10 +58,13 @@ _install_py_deps() {   # gppylib needs pgdb/pg (PyGreSQL, no arm64 wheel -> comp
   # Subshell: confine cloudberry-env.sh's LD_LIBRARY_PATH so it does NOT leak into the host
   # useradd/su below — the vendored libselinux otherwise breaks PAM ("su: cannot open session:
   # Module is unknown"). gpadmin's own commands source the env inside their own `su -c`.
+  # Also filtered for NOISE: pip's build step (PyGreSQL compiles) shells out under the same
+  # polluted LD_LIBRARY_PATH.
   # shellcheck disable=SC1090
   ( source "$PREFIX/cloudberry-env.sh"
     PATH="$PREFIX/bin:$PATH" LDFLAGS="-L$PREFIX/lib" \
-      python3 -m pip install --no-input --disable-pip-version-check --retries 5 --timeout 60 psutil PyYAML PyGreSQL >/dev/null )
+      python3 -m pip install --no-input --disable-pip-version-check --retries 5 --timeout 60 psutil PyYAML PyGreSQL >/dev/null
+  ) 2>&1 | { grep -v "$NOISE" || true; }
 }
 
 _setup_ssh() {   # gpdemo's gpinitstandby/gpstart ssh to the host by name even single-node
@@ -84,10 +93,14 @@ provision-demo-cluster() {
   echo "== bringing up demo cluster: coordinator + standby + $PRIMARIES primaries + $PRIMARIES mirrors =="
   # gpdemo is unattended (demo_cluster.sh calls gpinitsystem -a). WITH_MIRRORS=true
   # auto-enables the standby. Idempotent: tear down any prior cluster first.
+  # Filtered for NOISE: gpdemo/gpinitsystem shell out to coreutils internally under the same
+  # polluted LD_LIBRARY_PATH (see NOISE above) -- this is the call site the original warning
+  # (`make cluster`'s coreutils backtrace) actually came from, since it's the one unredirected
+  # invocation in this function that also sources cloudberry-env.sh.
   su - "$GPUSER" -c "source $PREFIX/cloudberry-env.sh; cd $DATADIR
     [ -f gpdemo-env.sh ] && NUM_PRIMARY_MIRROR_PAIRS=$PRIMARIES WITH_MIRRORS=true gpdemo -d >/dev/null 2>&1 || true
     rm -rf datadirs gpdemo-env.sh clusterConfigFile hostfile ./*.log 2>/dev/null || true
-    NUM_PRIMARY_MIRROR_PAIRS=$PRIMARIES WITH_MIRRORS=true gpdemo"
+    NUM_PRIMARY_MIRROR_PAIRS=$PRIMARIES WITH_MIRRORS=true gpdemo" 2>&1 | { grep -v "$NOISE" || true; }
 
   echo
   echo "== gpinitsystem config gpdemo generated =="
