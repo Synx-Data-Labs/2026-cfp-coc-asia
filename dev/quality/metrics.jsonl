@@ -1,0 +1,1 @@
+{"task":"T20260804-833680","date":"2026-08-04","files":["Makefile","README.md","build.sh"],"shellcheck":null,"coverage_pct":null,"max_fn_lines":25,"file_loc":35,"dup_pct":null,"secrets":null,"code_scanning":null,"design_score":88,"delta":{}}
