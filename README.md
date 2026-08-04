@@ -31,6 +31,10 @@ make smoke      # the portability gate across all 9 distros
 make cluster    # coordinator + standby + 2 primaries + 2 mirrors, then print gp_segment_configuration
 ```
 
+Already have a local `apache/cloudberry` checkout? `make dist CLOUDBERRY_LOCAL_SRC=/path/to/it`
+clones from it instead of the remote (still a fresh clone each time — no network access to
+`github.com` for the Cloudberry source).
+
 <details><summary>…or without make (raw docker)</summary>
 
 ```bash
