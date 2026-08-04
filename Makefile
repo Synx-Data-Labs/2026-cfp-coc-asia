@@ -14,6 +14,8 @@ TOOLCHAIN_IMAGE ?= coc-toolchain:gcc12
 BUILD_IMAGE     ?= coc-build:rocky8
 GCC_VERSION     ?= 12.3.0
 CLOUDBERRY_REF  ?= 2.1.0-incubating
+CLOUDBERRY_LOCAL_SRC ?=                    # optional: path to an existing local apache/cloudberry checkout
+                                            # (at CLOUDBERRY_REF) -- clone from it instead of the remote
 MAKE_JOBS       ?= 2                       # ORCA's -O3 is RAM-heavy; raise on a big box: make dist MAKE_JOBS=8
 PKG_VERSION     ?= 2.1.0
 TARGET          ?= ubuntu:24.04            # single distro for `make test`
@@ -36,8 +38,9 @@ toolchain:  ## Build the from-source GCC 12 base image (slow, once)
 image: toolchain  ## Build the Rocky 8 build/runtime image
 	docker build --platform=$(PLATFORM) -t $(BUILD_IMAGE) .
 
-dist: image  ## Build + vendor + package -> dist/*.rpm,*.deb (one container)
-	$(DOCKER_RUN) -e MAKE_JOBS=$(MAKE_JOBS) -e CLOUDBERRY_REF=$(CLOUDBERRY_REF) -e PKG_VERSION=$(PKG_VERSION) $(BUILD_IMAGE) \
+dist: image  ## Build + vendor + package -> dist/*.rpm,*.deb (one container). CLOUDBERRY_LOCAL_SRC=... to clone from a local checkout instead of the remote.
+	$(DOCKER_RUN) $(if $(CLOUDBERRY_LOCAL_SRC),-v "$(CLOUDBERRY_LOCAL_SRC)":/mnt/cloudberry-src:ro -e CLOUDBERRY_LOCAL_SRC=/mnt/cloudberry-src,) \
+	  -e MAKE_JOBS=$(MAKE_JOBS) -e CLOUDBERRY_REF=$(CLOUDBERRY_REF) -e PKG_VERSION=$(PKG_VERSION) $(BUILD_IMAGE) \
 	  bash -lc 'bash /opt/build.sh && bash /opt/vendor.sh && bash /work/package.sh'
 
 test:  ## Install dist/ package into one distro (TARGET=...) + portability gate
