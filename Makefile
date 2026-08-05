@@ -39,6 +39,10 @@ image: toolchain  ## Build the Rocky 8 build/runtime image
 	docker build --platform=$(PLATFORM) -t $(BUILD_IMAGE) .
 
 dist: image  ## Build + vendor + package -> dist/*.rpm,*.deb (one container). CLOUDBERRY_LOCAL_SRC=... to clone from a local checkout instead of the remote.
+	@if find dist -maxdepth 1 \( -name '*.rpm' -o -name '*.deb' \) 2>/dev/null | grep -q .; then \
+	  echo "error: dist/ already has package artifacts — run 'make clean dist' to rebuild from scratch." >&2; \
+	  exit 1; \
+	fi
 	$(DOCKER_RUN) $(if $(CLOUDBERRY_LOCAL_SRC),-v "$(CLOUDBERRY_LOCAL_SRC)":/mnt/cloudberry-src:ro -e CLOUDBERRY_LOCAL_SRC=/mnt/cloudberry-src,) \
 	  -e MAKE_JOBS=$(MAKE_JOBS) -e CLOUDBERRY_REF=$(CLOUDBERRY_REF) -e PKG_VERSION=$(PKG_VERSION) $(BUILD_IMAGE) \
 	  bash -lc 'bash /opt/build.sh && bash /opt/vendor.sh && bash /work/package.sh'
