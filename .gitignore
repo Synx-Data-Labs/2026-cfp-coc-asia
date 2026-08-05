@@ -1,3 +1,5 @@
 dist/
 *.rpm
 *.deb
+
+.DS_Store
