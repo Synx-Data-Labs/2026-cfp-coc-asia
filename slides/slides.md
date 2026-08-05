@@ -2,7 +2,7 @@
 
 > **Deck source (md-first).** Render into the **official CoC Asia template (mandatory)** — [Google Slides template](https://docs.google.com/presentation/d/1cAZfwR5Rs8pq6SCkguT-imlSpPVMKNpng1nJnjJe0MU/edit?usp=sharing) · [guide](https://asia.communityovercode.org/guide/presentation_slides_template.html). Required: **16:9**; **30 min total = 23–27 min content + 3–5 min Q&A**; at minimum use the template's title slide. One `## Slide` per slide; `Notes:` = speaker notes; `Chart:` blocks describe a visual to build in Slides.
 >
-> All numbers are verified against the shipped public companion repo `Synx-Data-Labs/2026-cfp-coc-asia` (the artifact the live demo reproduces). The one figure to refresh day-of is the exact **vendored-lib count**, read off a fresh `make dist`.
+> All numbers are verified against the shipped public companion repo `Synx-Data-Labs/2026-cfp-coc-asia` (the artifact the live demo reproduces). The one figure to refresh day-of is the exact **vendored-lib count** (51 as of the 2026-08-04 CI build), read off a fresh `make dist`.
 >
 > 25 slides ≈ 1 min each. Use the template's title + thank-you/feedback slides.
 
@@ -171,7 +171,7 @@ Everything that isn't glibc is **vendored into `lib/`** and linked via an `$ORIG
 
 > No external package-manager dependencies. No *"install these 40 packages first."*
 
-Notes: Show this as the contrast to Slide 4. The usual experience is resolving a dependency tree on the target host; here the only thing we ask of your machine is a glibc from the last several years. (The exact vendored-lib count is printed by `vendor.sh` on each build — read the live number off a fresh `make dist` before the talk rather than hard-coding it here.)
+Notes: Show this as the contrast to Slide 4. The usual experience is resolving a dependency tree on the target host; here the only thing we ask of your machine is a glibc from the last several years. (**51 vendored libs** as of the 2026-08-04 CI build — `vendor.sh` prints this on each build; re-verify the live number off a fresh `make dist` closer to the talk in case a dependency changed.)
 
 ---
 
