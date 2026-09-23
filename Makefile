@@ -33,10 +33,10 @@ help:  ## List targets
 	@awk 'BEGIN{FS=":.*##"} /^[a-zA-Z0-9_\/-]+:.*##/{printf "  \033[36m%-9s\033[0m %s\n",$$1,$$2}' $(MAKEFILE_LIST)
 
 toolchain:  ## Build the from-source GCC 12 base image (slow, once)
-	docker build --platform=$(PLATFORM) --build-arg GCC_VERSION=$(GCC_VERSION) -t $(TOOLCHAIN_IMAGE) toolchain/
+	DOCKER_BUILDKIT=1 docker build --platform=$(PLATFORM) --build-arg GCC_VERSION=$(GCC_VERSION) -t $(TOOLCHAIN_IMAGE) toolchain/
 
 image: toolchain  ## Build the Rocky 8 build/runtime image
-	docker build --platform=$(PLATFORM) -t $(BUILD_IMAGE) .
+	DOCKER_BUILDKIT=1 docker build --platform=$(PLATFORM) -t $(BUILD_IMAGE) .
 
 dist: image  ## Build + vendor + package -> dist/*.rpm,*.deb (one container). CLOUDBERRY_LOCAL_SRC=... to clone from a local checkout instead of the remote.
 	@if find dist -maxdepth 1 \( -name '*.rpm' -o -name '*.deb' \) 2>/dev/null | grep -q .; then \
