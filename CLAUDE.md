@@ -1,4 +1,4 @@
-# 2026-cfp-coc-asia
+# synxdb-ce
 
 Companion repo for the Community Over Code Asia 2026 talk "Build Once, Run
 on Any Linux: A Truly Portable Binary Distribution for Apache Cloudberry
