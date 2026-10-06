@@ -1,6 +1,6 @@
 # Developer Guidelines
 
-These guidelines apply to all work in the 2026-cfp-coc-asia project.
+These guidelines apply to all work in the synxdb-ce project.
 
 ## Core Principles
 
